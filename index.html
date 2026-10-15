@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>난나난 농장 | 정성으로 키운 자연 농산물</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        farm: {
+                            50: '#f4f7f4',
+                            100: '#e3ebe3',
+                            200: '#c8dac9',
+                            500: '#4a7c59',
+                            600: '#3b6747',
+                            700: '#2f5238',
+                            800: '#25402c',
+                            accent: '#e67e22'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Vue 3 CDN for reactive state and interactive admin features -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <style>
+        [v-cloak] { display: none !important; }
+        .smooth-scroll { scroll-behavior: smooth; }
+        .bg-pattern {
+            background-color: #f8faf8;
+            background-image: radial-gradient(#4a7c59 0.5px, transparent 0.5px), radial-gradient(#4a7c59 0.5px, #f8faf8 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            background-opacity: 0.05;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased font-sans smooth-scroll">
+
+<div id="app" v-cloak class="min-h-screen flex flex-col justify-between relative">
+
+    <!-- Top Admin Bar Notification -->
+    <div v-if="isAdmin" class="bg-amber-600 text-white px-4 py-2 text-sm font-medium flex justify-between items-center sticky top-0 z-50 shadow-md">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-user-shield"></i>
+            <span><strong>관리자 모드 작동 중</strong> (비밀번호: 1111) - 수확물, 농사일지 및 정보 수정이 가능합니다.</span>
+        </div>
+        <button @click="logoutAdmin" class="bg-amber-800 hover:bg-amber-900 px-3 py-1 rounded-lg text-xs transition">
+            <i class="fa-solid fa-right-from-bracket mr-1"></i> 관리자 로그아웃
+        </button>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo & Brand Name -->
+                <a href="#" class="flex items-center space-x-3 group">
+                    <div class="w-11 h-11 bg-farm-500 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-md group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-seedling"></i>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-bold text-farm-800 tracking-tight block">{{ siteInfo.title }}</span>
+                        <span class="text-xs text-farm-600 tracking-wider block font-medium">{{ siteInfo.subtitle }}</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Nav Navigation -->
+                <nav class="hidden md:flex space-x-8 text-sm font-semibold text-gray-700">
+                    <a href="#about" class="hover:text-farm-600 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-house-user text-farm-500"></i>
+                        <span>농가 소개</span>
+                    </a>
+                    <a href="#gallery" class="hover:text-farm-600 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-book-open text-farm-500"></i>
+                        <span>농사 일지</span>
+                    </a>
+                    <a href="#market" class="hover:text-farm-600 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-basket-shopping text-farm-500"></i>
+                        <span>직거래 장터</span>
+                    </a>
+                    <a href="#contact" class="hover:text-farm-600 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-envelope text-farm-500"></i>
+                        <span>문의 하기</span>
+                    </a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-600 hover:text-farm-600 p-2 focus:outline-none">
+                        <i :class="mobileMenuOpen ? 'fa-solid fa-xmark text-2xl' : 'fa-solid fa-bars text-2xl'"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Nav Menu -->
+        <div v-if="mobileMenuOpen" class="md:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-4 space-y-3">
+            <a href="#about" @click="mobileMenuOpen=false" class="block py-2 text-gray-700 font-medium hover:text-farm-600 border-b border-gray-50">
+                <i class="fa-solid fa-house-user mr-2 text-farm-500"></i>농가 소개
+            </a>
+            <a href="#gallery" @click="mobileMenuOpen=false" class="block py-2 text-gray-700 font-medium hover:text-farm-600 border-b border-gray-50">
+                <i class="fa-solid fa-book-open mr-2 text-farm-500"></i>농사 일지 & 갤러리
+            </a>
+            <a href="#market" @click="mobileMenuOpen=false" class="block py-2 text-gray-700 font-medium hover:text-farm-600 border-b border-gray-50">
+                <i class="fa-solid fa-basket-shopping mr-2 text-farm-500"></i>농작물 직거래 장터
+            </a>
+            <a href="#contact" @click="mobileMenuOpen=false" class="block py-2 text-gray-700 font-medium hover:text-farm-600">
+                <i class="fa-solid fa-envelope mr-2 text-farm-500"></i>문의 하기
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero Banner Section -->
+    <section class="relative bg-farm-800 text-white overflow-hidden py-20 lg:py-28">
+        <div class="absolute inset-0 z-0 opacity-25">
+            <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=80" alt="Farm Field Background" class="w-full h-full object-cover">
+        </div>
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="md:w-3/5 space-y-5">
+                <span class="inline-block px-3 py-1 bg-farm-500/80 text-white text-xs font-semibold rounded-full tracking-wider uppercase backdrop-blur-sm">
+                    🌱 친환경 정성 농가
+                </span>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-black leading-tight tracking-tight">
+                    {{ siteInfo.heroTitle }}
+                </h1>
+                <p class="text-base sm:text-lg text-farm-100 max-w-xl font-light leading-relaxed">
+                    {{ siteInfo.heroSubtitle }}
+                </p>
+                <div class="pt-2 flex flex-wrap justify-center md:justify-start gap-3">
+                    <a href="#market" class="px-6 py-3 bg-farm-accent hover:bg-orange-600 text-white font-bold rounded-xl shadow-lg transition transform hover:-translate-y-0.5 flex items-center space-x-2">
+                        <i class="fa-solid fa-apple-whole"></i>
+                        <span>싱싱한 농작물 보기</span>
+                    </a>
+                    <a href="#contact" class="px-6 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-xl border border-white/30 backdrop-blur-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>농장에 문의하기</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Farmer Quick Card / Profile highlight -->
+            <div class="md:w-2/5 w-full max-w-md bg-white text-gray-800 rounded-3xl p-6 shadow-2xl border border-farm-100 relative">
+                <button v-if="isAdmin" @click="openEditSiteModal" class="absolute top-4 right-4 text-xs bg-farm-500 text-white px-2.5 py-1 rounded-md hover:bg-farm-600">
+                    <i class="fa-solid fa-pen"></i> 수정
+                </button>
+                <div class="flex items-center space-x-4 mb-4">
+                    <img :src="siteInfo.farmerPhoto" :alt="siteInfo.farmerName" class="w-20 h-20 rounded-2xl object-cover border-2 border-farm-500 shadow">
+                    <div>
+                        <span class="text-xs text-farm-600 font-bold tracking-wide">농장주 프로필</span>
+                        <h3 class="text-xl font-bold text-gray-900">{{ siteInfo.farmerName }}</h3>
+                        <p class="text-xs text-gray-500"><i class="fa-solid fa-location-dot text-farm-500 mr-1"></i>{{ siteInfo.location }}</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-600 italic bg-farm-50 p-3 rounded-xl mb-4 border border-farm-100">
+                    "{{ siteInfo.farmerMotto }}"
+                </p>
+                <div class="space-y-2 text-xs text-gray-600 border-t border-gray-100 pt-3">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-gray-500">주요 재배 작물</span>
+                        <span class="font-bold text-farm-700">{{ siteInfo.mainCrops }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-gray-500">이메일 문의</span>
+                        <a :href="'mailto:' + siteInfo.email" class="font-bold text-farm-600 hover:underline">{{ siteInfo.email }}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-16 md:py-24 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <span class="text-farm-600 font-bold text-sm tracking-wider uppercase">ABOUT OUR FARM</span>
+                <h2 class="text-3xl font-extrabold text-gray-900 mt-1">자연과 사람이 공존하는 난나난 농장 이야기</h2>
+                <div class="w-12 h-1 bg-farm-500 mx-auto mt-3 rounded-full"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                <div class="relative">
+                    <img :src="siteInfo.aboutImage" alt="농장 풍경" class="rounded-3xl shadow-xl w-full h-80 sm:h-96 object-cover">
+                    <div class="absolute -bottom-6 -right-6 bg-farm-700 text-white p-5 rounded-2xl shadow-lg hidden sm:block">
+                        <div class="text-2xl font-black">100%</div>
+                        <div class="text-xs text-farm-200">정성과 애정으로 키운 농작물</div>
+                    </div>
+                </div>
+
+                <div class="space-y-5">
+                    <h3 class="text-2xl font-bold text-gray-800 leading-snug">
+                        흙을 사랑하고 정직한 먹거리를 만드는 <br class="hidden sm:inline">농부의 약속입니다.
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed text-sm sm:text-base whitespace-pre-line">
+                        {{ siteInfo.aboutText }}
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4 pt-4">
+                        <div class="bg-farm-50 p-4 rounded-xl border border-farm-100 flex items-start space-x-3">
+                            <div class="text-farm-600 text-xl"><i class="fa-solid fa-leaf"></i></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-800">친환경 방식</h4>
+                                <p class="text-xs text-gray-500 mt-0.5">화학비료 최소화 & 자연비료</p>
+                            </div>
+                        </div>
+                        <div class="bg-farm-50 p-4 rounded-xl border border-farm-100 flex items-start space-x-3">
+                            <div class="text-farm-600 text-xl"><i class="fa-solid fa-truck-fast"></i></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-800">갓 수확 직거래</h4>
+                                <p class="text-xs text-gray-500 mt-0.5">밭에서 식탁으로 당일발송</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Farming Log & Gallery Section -->
+    <section id="gallery" class="py-16 md:py-24 bg-pattern border-y border-gray-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+                <div>
+                    <span class="text-farm-600 font-bold text-sm tracking-wider uppercase">FARMING DIARY</span>
+                    <h2 class="text-3xl font-extrabold text-gray-900 mt-1">농사 일지 & 현장 갤러리</h2>
+                    <p class="text-gray-600 text-sm mt-1">오늘도 농장에서 땀방울을 흘리며 기록한 생생한 이야기입니다.</p>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button v-if="isAdmin" @click="openAddLogModal" class="px-4 py-2.5 bg-farm-600 hover:bg-farm-700 text-white font-bold rounded-xl text-sm shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>새 농사일지 작성</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category Filters -->
+            <div class="flex flex-wrap gap-2 mb-8">
+                <button 
+                    v-for="cat in ['전체', '수확기록', '농장일상', '재배 노하우']" 
+                    :key="cat"
+                    @click="activeLogCategory = cat"
+                    :class="activeLogCategory === cat ? 'bg-farm-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                    class="px-4 py-1.5 rounded-full text-xs font-semibold border border-gray-200 transition shadow-sm"
+                >
+                    {{ cat }}
+                </button>
+            </div>
+
+            <!-- Gallery Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div 
+                    v-for="log in filteredLogs" 
+                    :key="log.id" 
+                    class="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col group"
+                >
+                    <div class="relative h-52 overflow-hidden bg-gray-100">
+                        <img :src="log.image" :alt="log.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <span class="absolute top-3 left-3 bg-farm-800/80 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
+                            {{ log.category }}
+                        </span>
+                        <div v-if="isAdmin" class="absolute top-3 right-3 flex space-x-1">
+                            <button @click="editLog(log)" class="w-7 h-7 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-amber-600 shadow">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button @click="deleteLog(log.id)" class="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1 flex items-center">
+                                <i class="fa-regular fa-calendar mr-1.5"></i>{{ log.date }}
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-farm-600 transition">{{ log.title }}</h3>
+                            <p class="text-xs text-gray-600 mt-2 line-clamp-3 leading-relaxed whitespace-pre-line">{{ log.content }}</p>
+                        </div>
+                        <div class="pt-2 border-t border-gray-50 flex items-center justify-between text-xs text-farm-700 font-medium">
+                            <span><i class="fa-solid fa-tag text-farm-400 mr-1"></i>{{ log.tag }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="filteredLogs.length === 0" class="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
+                <i class="fa-solid fa-pen-to-square text-3xl text-gray-300 mb-2"></i>
+                <p class="text-gray-500 font-medium text-sm">등록된 농사 일지가 없습니다.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Market Section -->
+    <section id="market" class="py-16 md:py-24 bg-white">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+                <div>
+                    <span class="text-farm-accent font-bold text-sm tracking-wider uppercase"><i class="fa-solid fa-store mr-1"></i>DIRECT MARKET</span>
+                    <h2 class="text-3xl font-extrabold text-gray-900 mt-1">재배 농작물 직거래 판매장</h2>
+                    <p class="text-gray-600 text-sm mt-1">난나난 농장에서 직접 가꿔 수확한 건강한 농산물을 만나보세요.</p>
+                </div>
+
+                <div>
+                    <button v-if="isAdmin" @click="openAddProductModal" class="px-4 py-2.5 bg-farm-accent hover:bg-orange-600 text-white font-bold rounded-xl text-sm shadow transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>판매 농작물 등록</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div 
+                    v-for="product in products" 
+                    :key="product.id"
+                    class="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                >
+                    <div class="relative">
+                        <img :src="product.image" :alt="product.name" class="w-full h-56 object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span 
+                                :class="{
+                                    'bg-green-600': product.status === '판매중',
+                                    'bg-amber-600': product.status === '예약중',
+                                    'bg-gray-600': product.status === '품절'
+                                }"
+                                class="text-white text-xs font-bold px-2.5 py-1 rounded-full shadow"
+                            >
+                                {{ product.status }}
+                            </span>
+                        </div>
+                        <div v-if="isAdmin" class="absolute top-3 right-3 flex space-x-1">
+                            <button @click="editProduct(product)" class="w-7 h-7 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-amber-600 shadow">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button @click="deleteProduct(product.id)" class="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 shadow">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex justify-between items-start mb-1">
+                                <h3 class="text-xl font-bold text-gray-900">{{ product.name }}</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 leading-relaxed">{{ product.description }}</p>
+                        </div>
+
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-gray-400 block">판매 단위 / 가격</span>
+                                <span class="text-lg font-black text-farm-800">{{ product.price }}</span>
+                            </div>
+                            <button 
+                                @click="openInquiryForProduct(product)"
+                                :disabled="product.status === '품절'"
+                                :class="product.status === '품절' ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-farm-700 hover:bg-farm-800 text-white shadow-md'"
+                                class="px-4 py-2 rounded-xl font-bold text-xs transition flex items-center space-x-1"
+                            >
+                                <i class="fa-solid fa-envelope"></i>
+                                <span>주문/문의</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State for Products -->
+            <div v-if="products.length === 0" class="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                <i class="fa-solid fa-wheat-awn text-3xl text-gray-300 mb-2"></i>
+                <p class="text-gray-500 font-medium text-sm">현재 판매 중인 농작물이 없습니다.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-16 md:py-24 bg-farm-50 border-t border-farm-100">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-farm-100">
+                <div class="text-center max-w-xl mx-auto mb-8">
+                    <span class="text-farm-600 font-bold text-xs tracking-wider uppercase">INQUIRY</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-1">농장에 문의하기</h2>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-1">농작물 직거래, 수확 체험, 궁금하신 점은 메일로 남겨주시면 정성껏 답변해 드리겠습니다.</p>
+                </div>
+
+                <form @submit.prevent="sendMailto" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">성함 / 성함(단체명)</label>
+                            <input v-model="contactForm.name" type="text" required placeholder="예: 홍길동" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-farm-500 focus:outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">연락처</label>
+                            <input v-model="contactForm.phone" type="text" required placeholder="010-0000-0000" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-farm-500 focus:outline-none text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">관심 상품 / 문의 제목</label>
+                        <input v-model="contactForm.subject" type="text" required placeholder="예: 유기농 배추 10kg 구매 문의" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-farm-500 focus:outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">문의 내용</label>
+                        <textarea v-model="contactForm.message" rows="4" required placeholder="문의하실 내용을 자세히 적어주세요." class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-farm-500 focus:outline-none text-sm"></textarea>
+                    </div>
+
+                    <div class="pt-2 text-center">
+                        <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-farm-700 hover:bg-farm-800 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center space-x-2 mx-auto">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            <span>이메일 문의 보내기</span>
+                        </button>
+                        <p class="text-xs text-gray-400 mt-2">
+                            * 버튼을 누르면 이메일 앱으로 연결됩니다. (<span class="text-farm-600 font-semibold">{{ siteInfo.email }}</span>)
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+                <div class="text-center md:text-left">
+                    <h3 class="text-white text-lg font-bold flex items-center justify-center md:justify-start space-x-2">
+                        <i class="fa-solid fa-seedling text-farm-500"></i>
+                        <span>{{ siteInfo.title }}</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">대표자: {{ siteInfo.farmerName }} | 위치: {{ siteInfo.location }}</p>
+                    <p class="text-xs text-gray-500">문의 이메일: <a :href="'mailto:' + siteInfo.email" class="text-farm-400 underline">{{ siteInfo.email }}</a></p>
+                </div>
+
+                <div class="text-center md:text-right text-xs text-gray-500">
+                    <p>© 2026 {{ siteInfo.title }}. All rights reserved.</p>
+                    <p class="mt-1">자연을 가꾸는 마음으로 매일을 만듭니다.</p>
+                </div>
+            </div>
+
+            <!-- Discrete Admin Login Trigger (Hidden subtly at footer bottom) -->
+            <div class="mt-8 pt-6 border-t border-gray-800/60 flex justify-between items-center text-[11px] text-gray-600">
+                <span>자연과 함께하는 소박한 농장 홈페이지</span>
+                <!-- Secret Admin Login Button -->
+                <button 
+                    @click="promptAdminLogin" 
+                    class="text-gray-700 hover:text-gray-400 transition cursor-pointer px-2 py-1 rounded border border-transparent hover:border-gray-800"
+                    title="농장 관리자 로그인"
+                >
+                    <i class="fa-solid fa-lock text-[10px] mr-1"></i>🔒 관리자
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Admin Login Modal -->
+    <div v-if="showLoginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button @click="showLoginModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-farm-100 text-farm-700 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">관리자 인증</h3>
+                <p class="text-xs text-gray-500">관리자 비밀번호를 입력해주세요.</p>
+            </div>
+            <form @submit.prevent="verifyAdminPassword">
+                <input 
+                    v-model="loginPassword" 
+                    type="password" 
+                    placeholder="비밀번호 입력" 
+                    required 
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-xl mb-3 text-center text-lg tracking-widest focus:ring-2 focus:ring-farm-500 focus:outline-none"
+                    ref="passwordInput"
+                >
+                <p v-if="loginError" class="text-xs text-red-500 text-center mb-3">비밀번호가 일치하지 않습니다.</p>
+                <button type="submit" class="w-full py-2.5 bg-farm-700 hover:bg-farm-800 text-white font-bold rounded-xl text-sm transition">
+                    로그인
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Site Info Modal -->
+    <div v-if="showEditSiteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-8">
+            <button @click="showEditSiteModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <i class="fa-solid fa-sliders text-farm-600 mr-2"></i> 농장 정보 수정
+            </h3>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">사이트/농장 이름</label>
+                    <input v-model="tempSiteInfo.title" type="text" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">농장 서브 슬로건</label>
+                    <input v-model="tempSiteInfo.subtitle" type="text" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">메인 큰 제목 (Hero)</label>
+                    <input v-model="tempSiteInfo.heroTitle" type="text" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">농부 이름 / 주소 / 주요 작물</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input v-model="tempSiteInfo.farmerName" placeholder="이름" class="p-2 border rounded-lg">
+                        <input v-model="tempSiteInfo.location" placeholder="지역" class="p-2 border rounded-lg">
+                        <input v-model="tempSiteInfo.mainCrops" placeholder="주요작물" class="p-2 border rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">이메일 주소</label>
+                    <input v-model="tempSiteInfo.email" type="email" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">프로필 사진 (이미지 파일 직접선택 또는 URL)</label>
+                    <input type="file" @change="handleFileUpload($event, 'tempSiteInfo', 'farmerPhoto')" class="mb-1 text-xs">
+                    <input v-model="tempSiteInfo.farmerPhoto" type="text" placeholder="또는 이미지 URL 입력" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">농장 소개 이미지</label>
+                    <input type="file" @change="handleFileUpload($event, 'tempSiteInfo', 'aboutImage')" class="mb-1 text-xs">
+                    <input v-model="tempSiteInfo.aboutImage" type="text" placeholder="URL 입력" class="w-full p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">농장 소개글</label>
+                    <textarea v-model="tempSiteInfo.aboutText" rows="4" class="w-full p-2 border rounded-lg"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-2">
+                <button @click="showEditSiteModal = false" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold">취소</button>
+                <button @click="saveSiteInfo" class="px-4 py-2 bg-farm-700 text-white rounded-lg text-xs font-bold">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Farming Log Modal -->
+    <div v-if="showLogModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-8">
+            <button @click="showLogModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-gray-900 mb-4">
+                {{ currentLog.id ? '농사 일지 수정' : '새 농사 일지 등록' }}
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">제목</label>
+                    <input v-model="currentLog.title" type="text" class="w-full p-2 border rounded-lg" placeholder="예: 첫 유기농 배추 씨앗 발아 완료">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">카테고리</label>
+                        <select v-model="currentLog.category" class="w-full p-2 border rounded-lg">
+                            <option value="수확기록">수확기록</option>
+                            <option value="농장일상">농장일상</option>
+                            <option value="재배 노하우">재배 노하우</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">날짜</label>
+                        <input v-model="currentLog.date" type="date" class="w-full p-2 border rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">태그 (#)</label>
+                    <input v-model="currentLog.tag" type="text" class="w-full p-2 border rounded-lg" placeholder="예: #봄농사 #씨앗파종">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">사진 등록 (컴퓨터 파일 업로드 또는 URL)</label>
+                    <input type="file" @change="handleFileUpload($event, 'currentLog', 'image')" class="mb-1 text-xs">
+                    <input v-model="currentLog.image" type="text" class="w-full p-2 border rounded-lg" placeholder="또는 이미지 URL">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">일지 내용</label>
+                    <textarea v-model="currentLog.content" rows="4" class="w-full p-2 border rounded-lg" placeholder="농사 과정과 느낌을 자유롭게 적어주세요."></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-2">
+                <button @click="showLogModal = false" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold">취소</button>
+                <button @click="saveLog" class="px-4 py-2 bg-farm-700 text-white rounded-lg text-xs font-bold">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div v-if="showProductModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-8">
+            <button @click="showProductModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-gray-900 mb-4">
+                {{ currentProduct.id ? '농작물 상품 수정' : '새 농작물 등록' }}
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">농작물 이름</label>
+                    <input v-model="currentProduct.name" type="text" class="w-full p-2 border rounded-lg" placeholder="예: 난나난 유기농 감자">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">가격 및 단위</label>
+                        <input v-model="currentProduct.price" type="text" class="w-full p-2 border rounded-lg" placeholder="예: 10kg / 28,000원">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">판매 상태</label>
+                        <select v-model="currentProduct.status" class="w-full p-2 border rounded-lg">
+                            <option value="판매중">판매중</option>
+                            <option value="예약중">예약중</option>
+                            <option value="품절">품절</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">농작물 사진 (컴퓨터 파일 업로드 또는 URL)</label>
+                    <input type="file" @change="handleFileUpload($event, 'currentProduct', 'image')" class="mb-1 text-xs">
+                    <input v-model="currentProduct.image" type="text" class="w-full p-2 border rounded-lg" placeholder="또는 이미지 URL">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">농작물 설명</label>
+                    <textarea v-model="currentProduct.description" rows="3" class="w-full p-2 border rounded-lg" placeholder="맛, 재배 특징, 배송 정보 등을 입력하세요."></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-2">
+                <button @click="showProductModal = false" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold">취소</button>
+                <button @click="saveProduct" class="px-4 py-2 bg-farm-accent text-white rounded-lg text-xs font-bold">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        return {
+            isAdmin: false,
+            showLoginModal: false,
+            loginPassword: '',
+            loginError: false,
+            mobileMenuOpen: false,
+
+            // Site Info State
+            showEditSiteModal: false,
+            siteInfo: {
+                title: '난나난 농장',
+                subtitle: 'Nannanan Organic Farm',
+                heroTitle: '땀과 정성으로 가꾼 정직한 우리 농산물',
+                heroSubtitle: '자연의 햇살과 흙의 기운을 담은 건강한 농작물을 밭에서 고객님의 식탁까지 직거래로 보내드립니다.',
+                farmerName: '난나난 농부',
+                location: '대한민국 청정 시흥 농원',
+                farmerMotto: '거짓 없는 흙처럼, 솔직하고 건강한 먹거리를 가꿉니다.',
+                mainCrops: '유기농 채소, 제철 과일, 구황작물',
+                email: 'pkykp777@naver.com',
+                farmerPhoto: 'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?auto=format&fit=crop&w=400&q=80',
+                aboutImage: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80',
+                aboutText: '안녕하세요! 난나난 농장입니다.\n우리 농장은 인공 화학 비료나 거친 농약을 줄이고, 흙 자체의 자생력을 키우는 순수한 자연 친화 농법을 지향합니다.\n매일 아침 밭을 돌보며 키워낸 농작물 하나하나에는 농부의 정성과 따뜻한 온기가 들어있습니다.'
+            },
+            tempSiteInfo: {},
+
+            // Log Gallery State
+            activeLogCategory: '전체',
+            showLogModal: false,
+            currentLog: { id: null, title: '', category: '수확기록', date: '', tag: '', image: '', content: '' },
+            logs: [
+                {
+                    id: 1,
+                    title: '싱그러운 봄철 유기농 배추 파종 현장',
+                    category: '농장일상',
+                    date: '2026-03-15',
+                    tag: '#봄맞이 #씨앗뿌리기',
+                    image: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80',
+                    content: '올해 봄 첫 씨앗을 고운 흙에 정성스레 심었습니다. 영양 가득한 토양 속에서 건강한 싹이 트기를 기대해봅니다.'
+                },
+                {
+                    id: 2,
+                    title: '달콤함 가득 품은 토마토 수확의 날',
+                    category: '수확기록',
+                    date: '2026-06-20',
+                    tag: '#제철과일 #빨간토마토',
+                    image: 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?auto=format&fit=crop&w=600&q=80',
+                    content: '자연 햇살을 듬뿍 받아 탐스럽게 익은 토마토를 수확했습니다. 당도와 싱싱함이 최상인 상태입니다!'
+                },
+                {
+                    id: 3,
+                    title: '맛있고 튼튼한 고구마 단단하게 가꾸기',
+                    category: '재배 노하우',
+                    date: '2026-08-10',
+                    tag: '#구황작물 #흙의선물',
+                    image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80',
+                    content: '잡초를 제거하고 땅에 볕이 잘 들도록 북주기 작업을 마쳤습니다. 가을엔 튼실한 고구마가 많이 나오겠지요.'
+                }
+            ],
+
+            // Products State
+            showProductModal: false,
+            currentProduct: { id: null, name: '', price: '', status: '판매중', image: '', description: '' },
+            products: [
+                {
+                    id: 1,
+                    name: '꿀 당도 유기농 꿀고구마',
+                    price: '10kg / 35,000원',
+                    status: '판매중',
+                    image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80',
+                    description: '산지 직접 수확 후 숙성하여 속이 부드럽고 수분감이 뛰어난 명품 꿀고구마입니다.'
+                },
+                {
+                    id: 2,
+                    name: '밭에서 갓 딴 찰옥수수',
+                    price: '20자루 / 25,000원',
+                    status: '예약중',
+                    image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=600&q=80',
+                    description: '쫄깃하고 달콤한 식감이 일품인 당일 수확 찰옥수수입니다.'
+                },
+                {
+                    id: 3,
+                    name: '싱싱한 찰토마토',
+                    price: '5kg / 22,000원',
+                    status: '판매중',
+                    image: 'https://images.unsplash.com/photo-1592841200221-a6898f307baa?auto=format&fit=crop&w=600&q=80',
+                    description: '단단하고 과즙이 단 풍부한 건강한 친환경 찰토마토 모음.'
+                }
+            ],
+
+            // Inquiry Contact Form State
+            contactForm: {
+                name: '',
+                phone: '',
+                subject: '',
+                message: ''
+            }
+        }
+    },
+    computed: {
+        filteredLogs() {
+            if (this.activeLogCategory === '전체') return this.logs;
+            return this.logs.filter(log => log.category === this.activeLogCategory);
+        }
+    },
+    mounted() {
+        this.loadLocalStorageData();
+    },
+    methods: {
+        // LocalStorage persistence logic
+        loadLocalStorageData() {
+            try {
+                const savedSite = localStorage.getItem('nannanan_siteInfo');
+                if (savedSite) this.siteInfo = JSON.parse(savedSite);
+
+                const savedLogs = localStorage.getItem('nannanan_logs');
+                if (savedLogs) this.logs = JSON.parse(savedLogs);
+
+                const savedProducts = localStorage.getItem('nannanan_products');
+                if (savedProducts) this.products = JSON.parse(savedProducts);
+            } catch (e) {
+                console.warn('LocalStorage access error:', e);
+            }
+        },
+        saveLocalStorageData() {
+            try {
+                localStorage.setItem('nannanan_siteInfo', JSON.stringify(this.siteInfo));
+                localStorage.setItem('nannanan_logs', JSON.stringify(this.logs));
+                localStorage.setItem('nannanan_products', JSON.stringify(this.products));
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+        },
+
+        // Admin Auth
+        promptAdminLogin() {
+            this.loginPassword = '';
+            this.loginError = false;
+            this.showLoginModal = true;
+            this.$nextTick(() => {
+                if (this.$refs.passwordInput) this.$refs.passwordInput.focus();
+            });
+        },
+        verifyAdminPassword() {
+            if (this.loginPassword === '1111') {
+                this.isAdmin = true;
+                this.showLoginModal = false;
+                this.loginError = false;
+            } else {
+                this.loginError = true;
+            }
+        },
+        logoutAdmin() {
+            this.isAdmin = false;
+        },
+
+        // Image File Reader (Convert Local Image to Data URL)
+        handleFileUpload(event, targetObjName, fieldName) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this[targetObjName][fieldName] = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        },
+
+        // Site Info Editing
+        openEditSiteModal() {
+            this.tempSiteInfo = JSON.parse(JSON.stringify(this.siteInfo));
+            this.showEditSiteModal = true;
+        },
+        saveSiteInfo() {
+            this.siteInfo = JSON.parse(JSON.stringify(this.tempSiteInfo));
+            this.saveLocalStorageData();
+            this.showEditSiteModal = false;
+        },
+
+        // Farming Log CRUD
+        openAddLogModal() {
+            const today = new Date().toISOString().substr(0, 10);
+            this.currentLog = {
+                id: null,
+                title: '',
+                category: '수확기록',
+                date: today,
+                tag: '#농장소식',
+                image: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80',
+                content: ''
+            };
+            this.showLogModal = true;
+        },
+        editLog(log) {
+            this.currentLog = JSON.parse(JSON.stringify(log));
+            this.showLogModal = true;
+        },
+        saveLog() {
+            if (!this.currentLog.title) return;
+            if (this.currentLog.id) {
+                const idx = this.logs.findIndex(l => l.id === this.currentLog.id);
+                if (idx !== -1) this.logs[idx] = JSON.parse(JSON.stringify(this.currentLog));
+            } else {
+                this.currentLog.id = Date.now();
+                this.logs.unshift(JSON.parse(JSON.stringify(this.currentLog)));
+            }
+            this.saveLocalStorageData();
+            this.showLogModal = false;
+        },
+        deleteLog(id) {
+            this.logs = this.logs.filter(l => l.id !== id);
+            this.saveLocalStorageData();
+        },
+
+        // Product CRUD
+        openAddProductModal() {
+            this.currentProduct = {
+                id: null,
+                name: '',
+                price: '10kg / 30,000원',
+                status: '판매중',
+                image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80',
+                description: ''
+            };
+            this.showProductModal = true;
+        },
+        editProduct(product) {
+            this.currentProduct = JSON.parse(JSON.stringify(product));
+            this.showProductModal = true;
+        },
+        saveProduct() {
+            if (!this.currentProduct.name) return;
+            if (this.currentProduct.id) {
+                const idx = this.products.findIndex(p => p.id === this.currentProduct.id);
+                if (idx !== -1) this.products[idx] = JSON.parse(JSON.stringify(this.currentProduct));
+            } else {
+                this.currentProduct.id = Date.now();
+                this.products.unshift(JSON.parse(JSON.stringify(this.currentProduct)));
+            }
+            this.saveLocalStorageData();
+            this.showProductModal = false;
+        },
+        deleteProduct(id) {
+            this.products = this.products.filter(p => p.id !== id);
+            this.saveLocalStorageData();
+        },
+
+        // Product Inquiry pre-fill
+        openInquiryForProduct(product) {
+            this.contactForm.subject = `[상품문의] ${product.name} (${product.price})`;
+            this.contactForm.message = `안녕하세요, ${product.name} 구매 및 문의 관련하여 연락 드립니다.`;
+            const contactElem = document.getElementById('contact');
+            if (contactElem) contactElem.scrollIntoView({ behavior: 'smooth' });
+        },
+
+        // Send Email via mailto
+        sendMailto() {
+            const recipient = this.siteInfo.email || 'pkykp777@naver.com';
+            const subject = encodeURIComponent(`[${this.siteInfo.title} 문의] ${this.contactForm.subject}`);
+            const body = encodeURIComponent(
+                `성함/단체명: ${this.contactForm.name}\n` +
+                `연락처: ${this.contactForm.phone}\n\n` +
+                `문의 내용:\n${this.contactForm.message}`
+            );
+            window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+        }
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
